@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: root
-Specification-Vendor: AxenoDev,Gexary
-Specification-Version: 1
-Implementation-Title: RootCompanion
-Implementation-Version: 1.0.0
-Implementation-Vendor: AxenoDev,Gexary
-Implementation-Timestamp: 2026-08-18T19:53:16+0200
-
