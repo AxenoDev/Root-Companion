@@ -1,9 +1,19 @@
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
-val modGroupId = project.property("mod_group_id").toString()
-val modId = project.property("mod_id").toString()
-val modVersion = project.property("mod_version").toString()
+val minecraftVersion = providers.gradleProperty("minecraft_version").get()
+val minecraftVersionRange = providers.gradleProperty("minecraft_version_range").get()
+val forgeVersion = providers.gradleProperty("forge_version").get()
+val forgeVersionRange = providers.gradleProperty("forge_version_range").get()
+val loaderVersionRange = providers.gradleProperty("loader_version_range").get()
+
+val modId = providers.gradleProperty("mod_id").get()
+val modName = providers.gradleProperty("mod_name").get()
+val modLicense = providers.gradleProperty("mod_license").get()
+val modVersion = providers.gradleProperty("mod_version").get()
+val modAuthors = providers.gradleProperty("mod_authors").get()
+val modDescription = providers.gradleProperty("mod_description").get()
+val modGroupId = providers.gradleProperty("mod_group_id").get()
 
 plugins {
     id("eclipse")
@@ -149,29 +159,29 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft(
-        "net.minecraftforge:forge:${property("minecraft_version")}-${property("forge_version")}"
+        "net.minecraftforge:forge:$minecraftVersion-$forgeVersion"
     )
 
     compileOnly(
-        "com.github.AxenoDev:NoctisUI-Forge:${property("noctisui_version")}"
+        "com.github.AxenoDev:NoctisUI-Forge:${providers.gradleProperty("noctisui_version").get()}"
     )
 
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 
     compileOnly(
-        "org.projectlombok:lombok:${property("lombok_version")}"
+        "org.projectlombok:lombok:${providers.gradleProperty("lombok_version").get()}"
     )
 
     annotationProcessor(
-        "org.projectlombok:lombok:${property("lombok_version")}"
+        "org.projectlombok:lombok:${providers.gradleProperty("lombok_version").get()}"
     )
 
     testCompileOnly(
-        "org.projectlombok:lombok:${property("lombok_version")}"
+        "org.projectlombok:lombok:${providers.gradleProperty("lombok_version").get()}"
     )
 
     testAnnotationProcessor(
-        "org.projectlombok:lombok:${property("lombok_version")}"
+        "org.projectlombok:lombok:${providers.gradleProperty("lombok_version").get()}"
     )
 }
 
@@ -182,17 +192,17 @@ dependencies {
 // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
 tasks.named<ProcessResources>("processResources") {
     val replaceProperties = mapOf(
-        "minecraft_version" to property("minecraft_version"),
-        "minecraft_version_range" to property("minecraft_version_range"),
-        "forge_version" to property("forge_version"),
-        "forge_version_range" to property("forge_version_range"),
-        "loader_version_range" to property("loader_version_range"),
-        "mod_id" to property("mod_id"),
-        "mod_name" to property("mod_name"),
-        "mod_license" to property("mod_license"),
-        "mod_version" to property("mod_version"),
-        "mod_authors" to property("mod_authors"),
-        "mod_description" to property("mod_description")
+        "minecraft_version" to minecraftVersion,
+        "minecraft_version_range" to minecraftVersionRange,
+        "forge_version" to forgeVersion,
+        "forge_version_range" to forgeVersionRange,
+        "loader_version_range" to loaderVersionRange,
+        "mod_id" to modId,
+        "mod_name" to modName,
+        "mod_license" to modLicense,
+        "mod_version" to modVersion,
+        "mod_authors" to modAuthors,
+        "mod_description" to modDescription
     )
 
     inputs.properties(replaceProperties)
@@ -203,7 +213,7 @@ tasks.named<ProcessResources>("processResources") {
             "pack.mcmeta"
         )
     ) {
-        expand(replaceProperties + mapOf("project" to project))
+        expand(replaceProperties)
     }
 }
 
