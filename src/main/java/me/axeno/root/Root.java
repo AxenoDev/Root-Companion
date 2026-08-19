@@ -1,10 +1,7 @@
 package me.axeno.root;
 
 import me.axeno.root.entity.RootEntity;
-import me.axeno.root.registry.ModBlocks;
-import me.axeno.root.registry.ModCreativeTabs;
-import me.axeno.root.registry.ModEntityTypes;
-import me.axeno.root.registry.ModItems;
+import me.axeno.root.registry.*;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -22,6 +19,7 @@ public class Root {
         ModBlocks.register(bus);
         ModCreativeTabs.register(bus);
         ModEntityTypes.register(bus);
+        ModMenuTypes.register(bus);
 
         bus.addListener(this::onEntityAttributeCreation);
     }

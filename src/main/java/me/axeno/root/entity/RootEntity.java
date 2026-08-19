@@ -1,8 +1,15 @@
 package me.axeno.root.entity;
 
+import lombok.Getter;
+import me.axeno.root.entity.inventory.RootInventory;
+import me.axeno.root.inventory.RootMenu;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.TamableAnimal;
@@ -12,10 +19,14 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RootEntity extends TamableAnimal {
+
+    @Getter
+    private final RootInventory inventory = new RootInventory(this);
 
     public RootEntity(EntityType<? extends TamableAnimal> type, Level level) {
         super(type, level);
@@ -42,10 +53,52 @@ public class RootEntity extends TamableAnimal {
     public @NotNull InteractionResult mobInteract(Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (this.isOwnedBy(player) && stack.isEmpty() && !this.level().isClientSide) {
-            this.setOrderedToSit(!this.isOrderedToSit());
+            if (player.isShiftKeyDown()) {
+                this.openInventory((ServerPlayer) player);
+            } else {
+                this.setOrderedToSit(!this.isOrderedToSit());
+            }
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
+    }
+
+    public void openInventory(ServerPlayer player) {
+        NetworkHooks.openScreen(player,
+                new SimpleMenuProvider(
+                        (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this),
+                        this.getDisplayName()),
+                buf -> buf.writeInt(this.getId())
+        );
+    }
+
+    @Override
+    public void addAdditionalSaveData(@NotNull CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        ListTag list = new ListTag();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.isEmpty()) {
+                CompoundTag itemTag = new CompoundTag();
+                itemTag.putInt("Slot", i);
+                stack.save(itemTag);
+                list.add(itemTag);
+            }
+        }
+        tag.put("Inventory", list);
+    }
+
+    @Override
+    public void readAdditionalSaveData(@NotNull CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        ListTag list = tag.getList("Inventory", CompoundTag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag itemTag = list.getCompound(i);
+            int slot = itemTag.getInt("Slot");
+            if (slot >= 0 && slot < inventory.getContainerSize()) {
+                inventory.setItem(slot, ItemStack.of(itemTag));
+            }
+        }
     }
 
     public void tameByOwner(Player player) {
