@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SGS",
+    "RHR",
+    "SGS"
+  ],
+  "key": {
+    "S": {
+      "tag": "root:seeds"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "H": {
+      "item": "root:root_heart"
+    }
+  },
+  "result": {
+    "item": "root:root",
+    "count": 1
+  }
+}
