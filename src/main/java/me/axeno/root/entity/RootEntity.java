@@ -12,6 +12,7 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RootEntity extends TamableAnimal {
@@ -38,7 +39,7 @@ public class RootEntity extends TamableAnimal {
     }
 
     @Override
-    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+    public @NotNull InteractionResult mobInteract(Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (this.isOwnedBy(player) && stack.isEmpty() && !this.level().isClientSide) {
             this.setOrderedToSit(!this.isOrderedToSit());
@@ -52,7 +53,7 @@ public class RootEntity extends TamableAnimal {
     }
 
     @Override
-    public @Nullable AgeableMob getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
+    public @Nullable AgeableMob getBreedOffspring(@NotNull ServerLevel level, @NotNull AgeableMob otherParent) {
         return null; // pour la reproduction -> donc y'a pas
     }
 }
