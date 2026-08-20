@@ -32,9 +32,12 @@ public class RootEntity extends TamableAnimal {
     public final AnimationState sitDownAnimationState = new AnimationState();
     public final AnimationState sitIdleAnimationState = new AnimationState();
     public final AnimationState standUpAnimationState = new AnimationState();
+    private static final int POPUP_MIN_COOLDOWN = 20 * 60 * 60;  // 1h
+    private static final int POPUP_MAX_COOLDOWN = 20 * 60 * 60 * 2; // 2h
+    private static final int POPUP_DURATION = 20 * 60 * 5; // 5minutes
 
-    private static final int POPUP_MIN_COOLDOWN = 20 * 30 * 5;  // 5 min
-    private static final int POPUP_MAX_COOLDOWN = 20 * 60 * 10; // 10 min
+    private int popupCooldown = randomCooldown();
+    private int popupDuration = 0;
 
     private static final String NO_POPUP = "";
 
@@ -43,8 +46,6 @@ public class RootEntity extends TamableAnimal {
     @Getter
     private final RootInventory inventory = new RootInventory(this);
 
-    private int popupCooldown = randomCooldown();
-
     public RootEntity(EntityType<? extends TamableAnimal> type, Level level) {
         super(type, level);
         setItemInHand(new ItemStack(Items.DIAMOND_AXE));
@@ -52,9 +53,9 @@ public class RootEntity extends TamableAnimal {
 
     public static AttributeSupplier.Builder createAttributes() {
         return TamableAnimal.createMobAttributes()
-                            .add(Attributes.MAX_HEALTH, 20.0D)
-                            .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                            .add(Attributes.FOLLOW_RANGE, 24.0D);
+                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.3D)
+                .add(Attributes.FOLLOW_RANGE, 24.0D);
     }
 
     @Override
@@ -115,18 +116,30 @@ public class RootEntity extends TamableAnimal {
     @Override
     public void customServerAiStep() {
         super.customServerAiStep();
-        if (isPopupActive()) return;
+        if (isPopupActive()) {
+            if (popupDuration > 0) {
+                popupDuration--;
+            }
+
+            if (popupDuration <= 0) {
+                setActivePopup(null);
+                popupCooldown = randomCooldown();
+            }
+
+            return;
+        }
+
         if (popupCooldown > 0) {
             popupCooldown--;
             return;
         }
 
         setActivePopup(RootPopups.random(this.random));
-        popupCooldown = randomCooldown();
+        popupDuration = POPUP_DURATION;
     }
 
     private int randomCooldown() {
-        return POPUP_MIN_COOLDOWN + this.random.nextInt(POPUP_MAX_COOLDOWN - POPUP_MIN_COOLDOWN);
+        return POPUP_MIN_COOLDOWN + this.random.nextInt(POPUP_MAX_COOLDOWN - POPUP_MIN_COOLDOWN + 1);
     }
 
     @Override
@@ -135,16 +148,22 @@ public class RootEntity extends TamableAnimal {
 
         if (isPopupActive() && stack.isEmpty()) {
             RootPopup popup = getActivePopup();
-            if (popup != null) {
-                if (this.level().isClientSide) {
-                    popup.onClientTrigger(this);
-                } else if (player instanceof ServerPlayer serverPlayer) {
-                    popup.onServerTrigger(this, serverPlayer);
-                    this.setActivePopup(null);
-                }
+            if (popup == null) {
+                return InteractionResult.sidedSuccess(this.level().isClientSide);
+            }
+            if (this.level().isClientSide) {
+                popup.onClientTrigger(this);
+                return InteractionResult.SUCCESS;
             }
 
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
+            if (player instanceof ServerPlayer serverPlayer) {
+                popup.onServerTrigger(this, serverPlayer);
+                this.setActivePopup(null);
+                popupDuration = 0;
+                popupCooldown = randomCooldown();
+            }
+
+            return InteractionResult.SUCCESS;
         }
 
         if (this.isOwnedBy(player) && stack.isEmpty() && !this.level().isClientSide) {
@@ -160,8 +179,7 @@ public class RootEntity extends TamableAnimal {
 
     public void openInventory(ServerPlayer player) {
         NetworkHooks.openScreen(player, new SimpleMenuProvider(
-                        (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this),
-                        this.getDisplayName()),
+                        (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this), this.getDisplayName()),
                 buf -> buf.writeInt(this.getId())
         );
     }
