@@ -1,6 +1,7 @@
 package me.axeno.root.client.dialogue;
 
 import me.axeno.root.Root;
+import me.axeno.root.reward.DialogueReward;
 import net.minecraft.resources.ResourceLocation;
 
 public final class RootDialogues {
@@ -29,5 +30,16 @@ public final class RootDialogues {
             .portrait(ROOT_PORTRAIT)
             .animation(DialogueAnimation.TYPEWRITER)
             .line("Root", "HEllo, comment tu vas ?")
+            .build();
+
+    public static final Dialogue GIVE_DIAMOND = Dialogue.builder("root_give_diamond")
+            .portrait(ROOT_PORTRAIT)
+            .animation(DialogueAnimation.TYPEWRITER)
+            .line(
+                    "Root",
+                    "Tu veux des diamants ?",
+                    DialogueButton.primary("Je veux mes diamants !", DialogueActions.rewardAndClose(DialogueReward.ROOT_FIRST_DIAMOND)),
+                    DialogueButton.secondary("Non, je refuse.", DialogueActions.close())
+            )
             .build();
 }

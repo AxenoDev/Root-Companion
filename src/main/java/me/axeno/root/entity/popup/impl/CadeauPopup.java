@@ -1,10 +1,9 @@
 package me.axeno.root.entity.popup.impl;
 
+import me.axeno.root.client.dialogue.DialogueManager;
+import me.axeno.root.client.dialogue.RootDialogues;
 import me.axeno.root.entity.RootEntity;
 import me.axeno.root.entity.popup.RootPopup;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 public class CadeauPopup extends RootPopup {
     public CadeauPopup() {
@@ -12,7 +11,7 @@ public class CadeauPopup extends RootPopup {
     }
 
     @Override
-    public void onServerTrigger(RootEntity entity, ServerPlayer player) {
-        player.getInventory().add(new ItemStack(Items.DIAMOND, 1));
+    public void onClientTrigger(RootEntity entity) {
+        DialogueManager.open(RootDialogues.GIVE_DIAMOND);
     }
 }
