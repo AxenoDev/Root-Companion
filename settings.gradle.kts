@@ -1,9 +1,16 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        mavenCentral()
+
         maven {
             name = "MinecraftForge"
             url = uri("https://maven.minecraftforge.net/")
+        }
+
+        maven {
+            name = "ParchmentMC"
+            url = uri("https://maven.parchmentmc.org")
         }
     }
 }
