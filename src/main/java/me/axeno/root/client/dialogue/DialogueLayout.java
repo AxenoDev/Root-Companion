@@ -6,7 +6,6 @@ public final class DialogueLayout {
     public static final float PANEL_WIDTH = 1560f;
     public static final float PANEL_HEIGHT = 300f;
     public static final float PANEL_BOTTOM = 55f;
-    public static final float PANEL_RADIUS = 8f;
     public static final float PORTRAIT_X = 30f;
     public static final float PORTRAIT_Y = -105f;
     public static final float CONTENT_X = 390f;
@@ -18,8 +17,8 @@ public final class DialogueLayout {
     public static final float TEXT_Y = CONTENT_Y;
     public static final float TEXT_FONT_SIZE = 20f;
     public static final float TEXT_LINE_SPACING = 7f;
-    public static final float BUTTON_WIDTH = 220f;
-    public static final float BUTTON_HEIGHT = 52f;
+    public static final float BUTTON_WIDTH = 200f;
+    public static final float BUTTON_HEIGHT = 44f;
     public static final float BUTTON_RIGHT = 28f;
     public static final float BUTTON_BOTTOM = 24f;
     public static final float BUTTON_FONT_SIZE = 13f;
@@ -49,4 +48,14 @@ public final class DialogueLayout {
     public static final int BUTTON_HOVER_RED = 241;
     public static final int BUTTON_HOVER_GREEN = 91;
     public static final int BUTTON_HOVER_BLUE = 14;
+
+    public static final float BUTTON_GAP = 14f;
+
+    public static final int BUTTON_SECONDARY_RED = 55;
+    public static final int BUTTON_SECONDARY_GREEN = 55;
+    public static final int BUTTON_SECONDARY_BLUE = 55;
+
+    public static final int BUTTON_SECONDARY_HOVER_RED = 80;
+    public static final int BUTTON_SECONDARY_HOVER_GREEN = 80;
+    public static final int BUTTON_SECONDARY_HOVER_BLUE = 80;
 }
