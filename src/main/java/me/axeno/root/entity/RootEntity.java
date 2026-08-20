@@ -52,20 +52,29 @@ public class RootEntity extends TamableAnimal {
     @Override
     public @NotNull InteractionResult mobInteract(Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
+        if (isPopupActive() && stack.isEmpty()) {
+            if (this.level().isClientSide) {
+                DialogueManager.open(RootDialogues.OUI_BONJOUR);
+            }
+
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
+
         if (this.isOwnedBy(player) && stack.isEmpty() && !this.level().isClientSide) {
             if (player.isShiftKeyDown()) {
                 this.openInventory((ServerPlayer) player);
             } else {
                 this.setOrderedToSit(!this.isOrderedToSit());
             }
+
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
     }
 
     public void openInventory(ServerPlayer player) {
-        NetworkHooks.openScreen(player,
-                new SimpleMenuProvider(
+        NetworkHooks.openScreen(player, new SimpleMenuProvider(
                         (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this),
                         this.getDisplayName()),
                 buf -> buf.writeInt(this.getId())

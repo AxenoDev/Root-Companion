@@ -1,5 +1,7 @@
 package me.axeno.root.item;
 
+import me.axeno.root.client.dialogue.DialogueManager;
+import me.axeno.root.client.dialogue.RootDialogues;
 import me.axeno.root.entity.RootEntity;
 import me.axeno.root.registry.ModEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -22,7 +24,12 @@ public class RootItem extends Item {
         Player player = context.getPlayer();
         BlockPos pos = context.getClickedPos().above();
 
-        if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
+        if (level.isClientSide) {
+            DialogueManager.open(RootDialogues.FIRST_CONTACT);
+            return InteractionResult.sidedSuccess(true);
+        }
+
+        if (level instanceof ServerLevel serverLevel) {
             RootEntity root = ModEntityTypes.ROOT_ENTITY.get().create(serverLevel);
             if (root != null) {
                 root.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
