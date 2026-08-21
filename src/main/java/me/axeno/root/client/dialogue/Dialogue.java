@@ -64,6 +64,16 @@ public final class Dialogue {
             return this;
         }
 
+        public Builder line(String speaker, String text, DialogueButton primaryButton) {
+            lines.add(new DialogueLine(speaker, text, null, List.of(primaryButton)));
+            return this;
+        }
+
+        public Builder line(String speaker, String text, DialogueButton primaryButton, DialogueButton secondaryButton) {
+            lines.add(new DialogueLine(speaker, text, null, List.of(primaryButton, secondaryButton)));
+            return this;
+        }
+
         public Dialogue build() {
             if (lines.isEmpty()) {
                 throw new IllegalStateException("Dialogue '" + id + "' has no lines.");
