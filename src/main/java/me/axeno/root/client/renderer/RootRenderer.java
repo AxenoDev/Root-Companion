@@ -22,7 +22,7 @@ import org.lwjgl.opengl.GL11;
 
 public class RootRenderer extends MobRenderer<RootEntity, RootModel<RootEntity>> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Root.MODID, "textures/entity/root.png");
-    private static final float POPUP_Y = 1.30F;
+    private static final float POPUP_Y = 1.60F;
     private static final float POPUP_SCALE = 0.008F;
     private static final float FONT_SIZE = 16F;
     private static final float PADDING_X = 10F;
