@@ -39,5 +39,4 @@ public class RootClient {
     public static void registerLayer(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(RootModel.LAYER_LOCATION, RootModel::createBodyLayer);
     }
-
 }

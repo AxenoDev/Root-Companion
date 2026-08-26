@@ -167,7 +167,8 @@ public class RootAnimations {
             ))
             .addAnimation("body", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                        new Keyframe(0.0F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
-                                                       new Keyframe(0.24F, KeyframeAnimations.degreeVec(-10.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
+                                                       new Keyframe(0.24F, KeyframeAnimations.degreeVec(-10.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
+                                                       new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .addAnimation("body", new AnimationChannel(AnimationChannel.Targets.POSITION,
                                                        new Keyframe(0.0F, KeyframeAnimations.posVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
@@ -176,7 +177,7 @@ public class RootAnimations {
             ))
             .build();
     public static final AnimationDefinition STAND_UP = AnimationDefinition.Builder
-            .withLength(1.12F)
+            .withLength(0.88F)
             .addAnimation("head", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                        new Keyframe(0.0F, KeyframeAnimations.degreeVec(15.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
                                                        new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
@@ -186,6 +187,7 @@ public class RootAnimations {
             ))
             .addAnimation("right_hand", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                              new Keyframe(0.0F, KeyframeAnimations.degreeVec(17.1098F, 3.7316F, -11.9384F), AnimationChannel.Interpolations.LINEAR),
+                                                             new Keyframe(0.4F, KeyframeAnimations.degreeVec(-20.6674F, -2.7975F, -6.5119F), AnimationChannel.Interpolations.LINEAR),
                                                              new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .addAnimation("right_hand", new AnimationChannel(AnimationChannel.Targets.POSITION,
@@ -197,6 +199,7 @@ public class RootAnimations {
             .addAnimation("left_hand", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                             new Keyframe(0.0F, KeyframeAnimations.degreeVec(17.1098F, -3.7316F, 11.9384F), AnimationChannel.Interpolations.LINEAR),
                                                             new Keyframe(0.24F, KeyframeAnimations.degreeVec(17.11F, -3.73F, 11.94F), AnimationChannel.Interpolations.LINEAR),
+                                                            new Keyframe(0.4F, KeyframeAnimations.degreeVec(-24.6675F, -2.7975F, 8.955F), AnimationChannel.Interpolations.LINEAR),
                                                             new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .addAnimation("left_hand", new AnimationChannel(AnimationChannel.Targets.POSITION,
@@ -207,6 +210,7 @@ public class RootAnimations {
             ))
             .addAnimation("chest", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                         new Keyframe(0.0F, KeyframeAnimations.degreeVec(-17.5F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
+                                                        new Keyframe(0.4F, KeyframeAnimations.degreeVec(5.45F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
                                                         new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .addAnimation("chest", new AnimationChannel(AnimationChannel.Targets.POSITION,
@@ -215,6 +219,7 @@ public class RootAnimations {
             ))
             .addAnimation("right_leg", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                             new Keyframe(0.0F, KeyframeAnimations.degreeVec(-90.0F, -15.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
+                                                            new Keyframe(0.64F, KeyframeAnimations.degreeVec(4.1148F, -1.415F, 0.0F), AnimationChannel.Interpolations.LINEAR),
                                                             new Keyframe(0.88F, KeyframeAnimations.degreeVec(0.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .addAnimation("right_leg", new AnimationChannel(AnimationChannel.Targets.POSITION,
@@ -240,9 +245,7 @@ public class RootAnimations {
             .build();
     public static final AnimationDefinition SIT_IDLE = AnimationDefinition.Builder
             .withLength(0.96F).looping()
-            .addAnimation("body", new AnimationChannel(AnimationChannel.Targets.POSITION,
-                                                       new Keyframe(0.0F, KeyframeAnimations.posVec(0.0F, -5.5F, 0.0F), AnimationChannel.Interpolations.LINEAR)
-            ))
+            .addAnimation("body", new AnimationChannel(AnimationChannel.Targets.POSITION, new Keyframe(0.0F, KeyframeAnimations.posVec(0.0F, -5.5F, 0.0F), AnimationChannel.Interpolations.LINEAR)))
             .addAnimation("head", new AnimationChannel(AnimationChannel.Targets.ROTATION,
                                                        new Keyframe(0.0F, KeyframeAnimations.degreeVec(15.0F, 0.0F, 0.0F), AnimationChannel.Interpolations.LINEAR),
                                                        new Keyframe(0.24F, KeyframeAnimations.degreeVec(12.5547F, -4.8293F, -1.2971F), AnimationChannel.Interpolations.LINEAR),
@@ -284,12 +287,4 @@ public class RootAnimations {
                                                            new Keyframe(0.96F, KeyframeAnimations.degreeVec(-90.0F, 10.0F, 0.0F), AnimationChannel.Interpolations.LINEAR)
             ))
             .build();
-
-    public enum RootAnimationState {
-        IDLE,
-        WALK,
-        SIT_DOWN,
-        SIT_IDLE,
-        STAND_UP
-    }
 }

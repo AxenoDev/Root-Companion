@@ -5,6 +5,9 @@ import me.axeno.root.entity.inventory.RootInventory;
 import me.axeno.root.inventory.RootMenu;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -16,24 +19,28 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RootEntity extends TamableAnimal {
+    public static final EntityDataAccessor<Long> LAST_POSE_CHANGE_TICK = SynchedEntityData.defineId(RootEntity.class, EntityDataSerializers.LONG);
+    public static final EntityDimensions STANDING_DIMENSIONS = EntityDimensions.scalable(0.75f, 1.5f);
+    public static final EntityDimensions SITTING_DIMENSIONS = EntityDimensions.scalable(0.75f, 1.18f);
+    protected static final int SIT_DOWN_DURATION_TICKS = 19;
+    protected static final int STANDUP_DURATION_TICKS = 19;
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState sitDownAnimationState = new AnimationState();
     public final AnimationState sitIdleAnimationState = new AnimationState();
     public final AnimationState standUpAnimationState = new AnimationState();
-
     @Getter
     private final RootInventory inventory = new RootInventory(this);
 
     public RootEntity(EntityType<? extends TamableAnimal> type, Level level) {
         super(type, level);
-        setItemInHand(new ItemStack(Items.DIAMOND_AXE));
+//        setItemInHand(new ItemStack(Items.DIAMOND_AXE));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -47,20 +54,132 @@ public class RootEntity extends TamableAnimal {
     public void tick() {
         super.tick();
 
-        if (this.level().isClientSide && !this.walkAnimation.isMoving()) {
-            this.idleAnimationState.startIfStopped(this.tickCount);
+        if (this.level().isClientSide()) {
+            this.setupSittingAnimationStates();
         }
+    }
+
+    protected void setupSittingAnimationStates() {
+        if (this.isVisuallySitting()) {
+            this.idleAnimationState.stop();
+            this.standUpAnimationState.stop();
+            if (this.isVisuallySittingDown()) {
+                this.sitDownAnimationState.startIfStopped(this.tickCount);
+                this.sitIdleAnimationState.stop();
+            } else {
+                this.sitDownAnimationState.stop();
+                this.sitIdleAnimationState.startIfStopped(this.tickCount);
+            }
+        } else {
+            this.sitDownAnimationState.stop();
+            this.sitIdleAnimationState.stop();
+            if (this.isStandingUp()) {
+                this.idleAnimationState.stop();
+                this.standUpAnimationState.startIfStopped(this.tickCount);
+            } else {
+                this.standUpAnimationState.stop();
+                this.idleAnimationState.startIfStopped(this.tickCount);
+            }
+        }
+    }
+
+    public boolean isInPoseTransition() {
+        long poseTime = this.getPoseTime();
+        return poseTime < (long) (this.isSitting() ? SIT_DOWN_DURATION_TICKS : STANDUP_DURATION_TICKS);
+    }
+
+    public boolean isSitting() {
+        return this.entityData.get(LAST_POSE_CHANGE_TICK) < 0L;
+    }
+
+    protected boolean isVisuallySittingDown() {
+        return this.isSitting()
+                && this.getPoseTime() < SIT_DOWN_DURATION_TICKS
+                && this.getPoseTime() >= 0L;
+    }
+
+    public boolean isVisuallySitting() {
+        return this.getPoseTime() < 0L != this.isSitting();
+    }
+
+    public boolean isFullySitting() {
+        return this.isSitting()
+                && this.getPoseTime() >= SIT_DOWN_DURATION_TICKS;
+    }
+
+    public boolean isSittingDown() {
+        return this.isSitting()
+                && this.getPoseTime() >= 0L
+                && this.getPoseTime() < SIT_DOWN_DURATION_TICKS;
+    }
+
+    public boolean isStandingUp() {
+        return !this.isSitting()
+                && this.getPoseTime() >= 0L
+                && this.getPoseTime() < STANDUP_DURATION_TICKS;
+    }
+
+    public long getPoseTime() {
+        return this.level().getGameTime() - Math.abs(this.entityData.get(LAST_POSE_CHANGE_TICK));
+    }
+
+    public void sitDown() {
+        if (this.isSitting()) return;
+        this.setPose(Pose.SITTING);
+
+        this.resetLastPoseChangeTick(-this.level().getGameTime());
+        this.getNavigation().stop();
+
+        this.setDeltaMovement(this.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
+    }
+
+    public void standUp() {
+        if (!this.isSitting()) return;
+        this.setPose(Pose.STANDING);
+        this.resetLastPoseChangeTick(this.level().getGameTime());
+    }
+
+    protected void resetLastPoseChangeTick(long lastPoseChangeTick) {
+        this.entityData.set(LAST_POSE_CHANGE_TICK, lastPoseChangeTick);
+    }
+
+    public boolean refuseToMove() {
+        return this.isSitting() || this.isInPoseTransition();
+    }
+
+    @Override
+    public void travel(@NotNull Vec3 travelVector) {
+        if (this.refuseToMove() && this.onGround()) {
+//            this.setDeltaMovement(this.getDeltaMovement().multiply(0.0D, 1.0D, 0.0D));
+            travelVector = travelVector.multiply(0.0D, 1.0D, 0.0D);
+        }
+
+        super.travel(travelVector);
+    }
+
+    @Override
+    protected void defineSynchedData() {
+        super.defineSynchedData();
+        this.entityData.define(LAST_POSE_CHANGE_TICK, 0L);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+    }
+
+    @Override
+    public @NotNull EntityDimensions getDimensions(@NotNull Pose pose) {
+        if (pose == Pose.SITTING)
+            return SITTING_DIMENSIONS.scale(this.getScale());
+
+        return STANDING_DIMENSIONS.scale(this.getScale());
     }
 
     @Override
     protected void updateWalkAnimation(float pPartialTick) {
-        float f;
-        if (this.getPose() == Pose.STANDING) {
-            f = Math.min(pPartialTick * 6.0F, 1.0F);
-        } else {
-            f = 0.0F;
-        }
-
+        float f = 0.0f;
+        if (this.getPose() == Pose.STANDING) f = Math.min(pPartialTick * 6.0F, 1.0F);
         this.walkAnimation.update(f, 0.2F);
     }
 
@@ -94,6 +213,11 @@ public class RootEntity extends TamableAnimal {
             if (player.isShiftKeyDown()) {
                 this.openInventory((ServerPlayer) player);
             } else {
+                if (this.isFullySitting()) {
+                    this.standUp();
+                } else if (!this.isInPoseTransition() && !this.isSitting()) {
+                    this.sitDown();
+                }
             }
 
             return InteractionResult.SUCCESS;
@@ -123,6 +247,7 @@ public class RootEntity extends TamableAnimal {
             }
         }
         tag.put("Inventory", list);
+        tag.putLong("LastPoseTick", this.entityData.get(LAST_POSE_CHANGE_TICK));
     }
 
     @Override
@@ -136,6 +261,10 @@ public class RootEntity extends TamableAnimal {
                 inventory.setItem(slot, ItemStack.of(itemTag));
             }
         }
+
+        long poseTick = tag.getLong("LastPoseTick");
+        if (poseTick < 0L) this.setPose(Pose.SITTING);
+        this.resetLastPoseChangeTick(poseTick);
     }
 
     public void tameByOwner(Player player) {
