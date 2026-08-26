@@ -27,10 +27,12 @@ public final class DialogueScreen extends Screen {
     private UiMetrics metrics;
     private DivComponent panel;
     private DivComponent textContainer;
-    private Button continueButton;
+    private DivComponent buttonContainer;
     private ImageComponent portrait;
     private FontAtlas regularFont;
     private FontAtlas boldFont;
+
+    private boolean pendingRefresh;
 
     private long lineStartTime;
     private boolean lineFullyRevealed;
@@ -72,7 +74,6 @@ public final class DialogueScreen extends Screen {
                         DialogueLayout.PANEL_ALPHA
                 )
         );
-        panel.setCornerRadius(metrics.sf(DialogueLayout.PANEL_RADIUS));
         panel.setOutline(
                 new Color(
                         DialogueLayout.OUTLINE_RED,
@@ -80,7 +81,7 @@ public final class DialogueScreen extends Screen {
                         DialogueLayout.OUTLINE_BLUE,
                         DialogueLayout.OUTLINE_ALPHA
                 ),
-                metrics.sf(1.5f)
+                metrics.sf(2f)
         );
         panel.enableBlur(18f, 1.0f);
 
@@ -99,7 +100,6 @@ public final class DialogueScreen extends Screen {
 
             float portraitWidth = originalWidth * scale;
             float portraitHeight = originalHeight * scale;
-
             float portraitX = metrics.sf(DialogueLayout.PORTRAIT_X);
             float portraitY = metrics.sf(DialogueLayout.PORTRAIT_Y);
 
@@ -110,7 +110,6 @@ public final class DialogueScreen extends Screen {
                     (int) portraitHeight,
                     dialoguePortrait.texture()
             );
-
             panel.addChild(portrait);
         }
 
@@ -120,55 +119,15 @@ public final class DialogueScreen extends Screen {
                 panelWidth,
                 panelHeight
         );
-
         panel.addChild(textContainer);
 
-        float buttonWidth = metrics.sf(DialogueLayout.BUTTON_WIDTH);
-        float buttonHeight = metrics.sf(DialogueLayout.BUTTON_HEIGHT);
-        float buttonX = panelWidth - buttonWidth - metrics.sf(DialogueLayout.BUTTON_RIGHT);
-        float buttonY = panelHeight - buttonHeight - metrics.sf(DialogueLayout.BUTTON_BOTTOM);
-        continueButton = new Button(
-                buttonX,
-                buttonY,
-                buttonWidth,
-                buttonHeight,
-                "CONTINUER",
-                new Color(
-                        DialogueLayout.BUTTON_RED,
-                        DialogueLayout.BUTTON_GREEN,
-                        DialogueLayout.BUTTON_BLUE,
-                        235
-                ),
-                Color.WHITE
+        buttonContainer = new DivComponent(
+                0,
+                0,
+                panelWidth,
+                panelHeight
         );
-
-        continueButton.setRadius(metrics.s(6));
-
-        continueButton.setOutline(
-                new Color(153, 42, 6, 255),
-                metrics.sf(1f)
-        );
-
-        continueButton.setFont(boldFont);
-
-        continueButton.setFontSize(
-                metrics.s(DialogueLayout.BUTTON_FONT_SIZE)
-        );
-
-        continueButton.hover(
-                120,
-                new Color(
-                        DialogueLayout.BUTTON_HOVER_RED,
-                        DialogueLayout.BUTTON_HOVER_GREEN,
-                        DialogueLayout.BUTTON_HOVER_BLUE,
-                        245
-                ),
-                Color.WHITE
-        );
-
-        continueButton.setOnClick(button -> next());
-
-        panel.addChild(continueButton);
+        panel.addChild(buttonContainer);
 
         refreshText();
     }
@@ -182,44 +141,172 @@ public final class DialogueScreen extends Screen {
         DialogueLine line = dialogueUI.currentLine();
 
         TextComponent speaker = new TextComponent(
-                metrics.s(DialogueLayout.SPEAKER_X), metrics.s(DialogueLayout.SPEAKER_Y),
-                line.speaker(), metrics.sf(DialogueLayout.SPEAKER_FONT_SIZE),
-                new Color(DialogueLayout.SPEAKER_RED, DialogueLayout.SPEAKER_GREEN, DialogueLayout.SPEAKER_BLUE),
-                boldFont);
+                metrics.s(DialogueLayout.SPEAKER_X),
+                metrics.s(DialogueLayout.SPEAKER_Y),
+                line.speaker(),
+                metrics.sf(DialogueLayout.SPEAKER_FONT_SIZE),
+                new Color(
+                        DialogueLayout.SPEAKER_RED,
+                        DialogueLayout.SPEAKER_GREEN,
+                        DialogueLayout.SPEAKER_BLUE
+                ),
+                boldFont
+        );
+
         textContainer.addChild(speaker);
 
-        List<String> wrappedLines = wrapText(
-                line.text(), metrics.sf(DialogueLayout.CONTENT_WIDTH), metrics.sf(DialogueLayout.TEXT_FONT_SIZE));
+        float panelWidth = metrics.sf(DialogueLayout.PANEL_WIDTH);
+        float panelHeight = metrics.sf(DialogueLayout.PANEL_HEIGHT);
 
-        float y = metrics.sf(DialogueLayout.TEXT_Y);
-        float lineHeight = regularFont.getLineHeight(metrics.sf(DialogueLayout.TEXT_FONT_SIZE));
+        float contentX = metrics.sf(DialogueLayout.CONTENT_X);
+        float contentY = metrics.sf(DialogueLayout.TEXT_Y);
+        float contentWidth = metrics.sf(DialogueLayout.CONTENT_WIDTH);
+
+        float fontSize = metrics.sf(DialogueLayout.TEXT_FONT_SIZE);
+
+        float lineHeight = regularFont.getLineHeight(fontSize);
         float spacing = metrics.sf(DialogueLayout.TEXT_LINE_SPACING);
+        float buttonHeight = metrics.sf(DialogueLayout.BUTTON_HEIGHT);
+        float buttonBottom = metrics.sf(DialogueLayout.BUTTON_BOTTOM);
+        float buttonTop = panelHeight - buttonBottom - buttonHeight;
+        float textButtonGap = metrics.sf(8f);
+        float textBottom = buttonTop - textButtonGap;
+        float maxTextHeight = textBottom - contentY;
+
+        List<String> wrappedLines = wrapText(line.text(), contentWidth, fontSize);
+        int maxLines = Math.max(1, (int) Math.floor((maxTextHeight + spacing) / (lineHeight + spacing)));
+
+        if (wrappedLines.size() > maxLines) {
+            wrappedLines = new ArrayList<>(
+                    wrappedLines.subList(0, maxLines)
+            );
+        }
 
         DialogueAnimation animation = dialogueUI.dialogue().getAnimation();
-        int charOffset = 0;
 
+        int charOffset = 0;
+        float y = contentY;
         for (String textLine : wrappedLines) {
+
             TextComponent text = new TextComponent(
-                    metrics.sf(DialogueLayout.CONTENT_X), y,
+                    contentX,
+                    y,
                     animation == DialogueAnimation.TYPEWRITER ? "" : textLine,
-                    metrics.sf(DialogueLayout.TEXT_FONT_SIZE),
-                    new Color(DialogueLayout.TEXT_RED, DialogueLayout.TEXT_GREEN, DialogueLayout.TEXT_BLUE),
-                    regularFont);
+                    fontSize,
+                    new Color(
+                            DialogueLayout.TEXT_RED,
+                            DialogueLayout.TEXT_GREEN,
+                            DialogueLayout.TEXT_BLUE
+                    ),
+                    regularFont
+            );
 
             if (animation == DialogueAnimation.FADE) {
-                text.setColor(withAlpha(text.getColor(), 0));
+                text.setColor(
+                        withAlpha(text.getColor(), 0)
+                );
             }
 
             textContainer.addChild(text);
-            animatedLines.add(new AnimatedLine(text, textLine, charOffset));
+
+            animatedLines.add(
+                    new AnimatedLine(
+                            text,
+                            textLine,
+                            charOffset
+                    )
+            );
 
             charOffset += textLine.length() + 1;
+
             y += lineHeight + spacing;
         }
 
         if (animation == DialogueAnimation.NONE) {
             lineFullyRevealed = true;
         }
+
+        buttonContainer.clearChildren();
+
+        List<DialogueButton> buttons = line.resolvedButtons(this::next);
+        if (buttons.isEmpty()) return;
+
+        float buttonWidth = metrics.sf(DialogueLayout.BUTTON_WIDTH);
+        float buttonHeightValue = metrics.sf(DialogueLayout.BUTTON_HEIGHT);
+
+        float bottom = panelHeight - buttonHeightValue - metrics.sf(DialogueLayout.BUTTON_BOTTOM);
+        float primaryX = panelWidth - buttonWidth - metrics.sf(DialogueLayout.BUTTON_RIGHT);
+
+        if (buttons.size() == 1) {
+            buttonContainer.addChild(
+                    createButton(
+                            buttons.get(0),
+                            primaryX,
+                            bottom,
+                            buttonWidth,
+                            buttonHeightValue
+                    )
+            );
+
+            return;
+        }
+
+        DialogueButton primary = buttons.get(0);
+        DialogueButton secondary = buttons.get(1);
+        float gap = metrics.sf(DialogueLayout.BUTTON_GAP);
+        float secondaryX = primaryX - gap - buttonWidth;
+
+        buttonContainer.addChild(
+                createButton(
+                        secondary,
+                        secondaryX,
+                        bottom,
+                        buttonWidth,
+                        buttonHeightValue
+                )
+        );
+
+        buttonContainer.addChild(
+                createButton(
+                        primary,
+                        primaryX,
+                        bottom,
+                        buttonWidth,
+                        buttonHeightValue
+                )
+        );
+    }
+
+    private Button createButton(DialogueButton config, float x, float y, float width, float height) {
+        boolean isPrimary = config.style() == DialogueButton.DialogueButtonStyle.PRIMARY;
+
+        Color background = isPrimary
+                ? new Color(DialogueLayout.BUTTON_RED, DialogueLayout.BUTTON_GREEN, DialogueLayout.BUTTON_BLUE, 235)
+                : new Color(DialogueLayout.BUTTON_SECONDARY_RED, DialogueLayout.BUTTON_SECONDARY_GREEN, DialogueLayout.BUTTON_SECONDARY_BLUE, 235);
+
+        Color hoverBackground = isPrimary
+                ? new Color(DialogueLayout.BUTTON_HOVER_RED, DialogueLayout.BUTTON_HOVER_GREEN, DialogueLayout.BUTTON_HOVER_BLUE, 245)
+                : new Color(DialogueLayout.BUTTON_SECONDARY_HOVER_RED, DialogueLayout.BUTTON_SECONDARY_HOVER_GREEN, DialogueLayout.BUTTON_SECONDARY_HOVER_BLUE, 245);
+
+        Color outline = isPrimary
+                ? new Color(153, 42, 6, 255)
+                : new Color(70, 70, 70, 255);
+
+        Button button = new Button(
+                x, y, width, height,
+                config.label(),
+                background,
+                Color.WHITE
+        );
+
+        button.setRadius(0);
+//        button.setOutline(outline, metrics.sf(1f));
+        button.setFont(boldFont);
+        button.setFontSize(metrics.s(DialogueLayout.BUTTON_FONT_SIZE));
+        button.hover(120, hoverBackground, Color.WHITE);
+        button.setOnClick(b -> config.action().execute());
+
+        return button;
     }
 
     private void updateAnimation() {
@@ -308,17 +395,21 @@ public final class DialogueScreen extends Screen {
             DialogueManager.close();
             return;
         }
-        refreshText();
+        pendingRefresh = true;
     }
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (pendingRefresh) {
+            pendingRefresh = false;
+            refreshText();
+        }
+
         updateAnimation();
         if (panel != null) {
             panel.render(graphics, mouseX, mouseY, partialTick);
         }
     }
-
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
