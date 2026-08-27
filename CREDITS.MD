@@ -15,7 +15,7 @@ Le design de Root Companion a été réalisé par :
 - Gexary
 
 Les modèles, textures, animations et autres ressources graphiques présentes dans
-`src/main/resources` sont distribués sous la licence Creative Commons
+`src/main/resources/assets/root` sont distribués sous la licence Creative Commons
 Attribution-ShareAlike 4.0 International (CC BY-SA 4.0), sauf indication contraire.
 
 ## Root
