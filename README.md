@@ -35,5 +35,5 @@ GNU General Public License v3.0.
 Tout le contenu du dossier `src/main/resources/assets/root` est distribué séparément sous la licence
 Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
 
-Consultez les fichiers `LICENSE`, `LICENSE-ASSETS` et `CREDITS.md`
+Consultez les fichiers [LICENSE](LISENCE), [LICENSE-ASSETS](LISENCE-ASSETS) et [CREDITS](CREDITS.MD)
 pour plus de détails.
