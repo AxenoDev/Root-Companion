@@ -1,6 +1,7 @@
 package me.axeno.root.entity;
 
 import lombok.Getter;
+import me.axeno.root.entity.ai.RootBreakBlockGoal;
 import me.axeno.root.entity.inventory.RootInventory;
 import me.axeno.root.entity.popup.RootPopup;
 import me.axeno.root.entity.popup.RootPopups;
@@ -12,6 +13,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
@@ -19,8 +21,13 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
@@ -40,6 +47,7 @@ public class RootEntity extends TamableAnimal {
     private static final int POPUP_MIN_COOLDOWN = 20 * 60 * 60;  // 1h
     private static final int POPUP_MAX_COOLDOWN = 20 * 60 * 60 * 2; // 2h
     private static final int POPUP_DURATION = 20 * 60 * 5; // 5minutes
+    private static final EntityDataAccessor<Integer> DATA_JOB = SynchedEntityData.defineId(RootEntity.class, EntityDataSerializers.INT);
 
     private int popupCooldown = randomCooldown();
     private int popupDuration = 0;
@@ -60,7 +68,8 @@ public class RootEntity extends TamableAnimal {
         return TamableAnimal.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.FOLLOW_RANGE, 24.0D);
+                .add(Attributes.FOLLOW_RANGE, 48.0D)
+                .add(Attributes.ATTACK_DAMAGE, 4.0D);
     }
 
     @Override
@@ -199,6 +208,7 @@ public class RootEntity extends TamableAnimal {
         super.defineSynchedData();
         this.entityData.define(DATA_POPUP_ID, NO_POPUP);
         this.entityData.define(LAST_POSE_CHANGE_TICK, 0L);
+        this.entityData.define(DATA_JOB, RootJob.IDLE.ordinal());
     }
 
     public boolean isPopupActive() {
@@ -219,10 +229,47 @@ public class RootEntity extends TamableAnimal {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.0D, 5.0F, 2.0F, false));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.8D));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(3, new RootBreakBlockGoal(
+                this,
+                RootJob.WOODCUTTER,
+                state -> state.is(BlockTags.LOGS),
+                state -> state.is(BlockTags.LEAVES),
+                1.0D,
+                16
+        ));
+//        this.goalSelector.addGoal(3, new RootBreakBlockGoal());
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.2D, true) {
+            @Override
+            public boolean canUse() {
+                return getJob() == RootJob.HUNTER
+                        && !refuseToMove()
+                        && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                LivingEntity target = getTarget();
+                return getJob() == RootJob.HUNTER
+                        && !refuseToMove()
+                        && target != null
+                        && target.isAlive()
+                        && super.canContinueToUse();
+            }
+
+            @Override
+            public void stop() {
+                super.stop();
+                if (getJob() != RootJob.HUNTER) {
+                    setTarget(null);
+                }
+            }
+        });
+        this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.0D, 5.0F, 2.0F, false));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Animal.class, 5, false, false, entity -> getJob() == RootJob.HUNTER));
     }
 
     @Override
@@ -342,5 +389,24 @@ public class RootEntity extends TamableAnimal {
     @Override
     public @Nullable AgeableMob getBreedOffspring(@NotNull ServerLevel level, @NotNull AgeableMob otherParent) {
         return null; // pour la reproduction -> donc y'a pas
+    }
+
+    public RootJob getJob() {
+        ItemStack stack = this.getMainHandItem();
+
+        if (stack.isEmpty()) return RootJob.IDLE;
+        if (stack.getItem() instanceof PickaxeItem) return RootJob.MINER;
+        if (stack.getItem() instanceof AxeItem) return RootJob.WOODCUTTER;
+        if (stack.getItem() instanceof SwordItem) return RootJob.HUNTER;
+
+        return RootJob.IDLE;
+    }
+
+    public void setJob(RootJob job) {
+        this.entityData.set(DATA_JOB, job.ordinal());
+
+        if (job != RootJob.HUNTER) {
+            this.setTarget(null);
+        }
     }
 }
