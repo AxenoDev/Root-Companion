@@ -65,11 +65,14 @@ public class RootModel<T extends Entity> extends HierarchicalModel<T> implements
         this.body.translateAndRotate(poseStack);
         this.chest.translateAndRotate(poseStack);
 
-        if (arm == HumanoidArm.RIGHT) this.rightHand.translateAndRotate(poseStack);
+        if (arm == HumanoidArm.RIGHT) {
+            this.rightHand.translateAndRotate(poseStack);
+        }
         else this.leftHand.translateAndRotate(poseStack);
 
-        poseStack.translate(0.0D, 0.5D, 0.0D);
-        poseStack.mulPose(new Quaternionf().rotateX((float) Math.toRadians(-20.0f)));
+        poseStack.translate(0.075D, -0.08D, 0.05D);
+        poseStack.mulPose(new Quaternionf().rotateX((float) Math.toRadians(-30.0f)));
+        poseStack.scale(0.8F, 0.8F, 0.8F);
     }
 
     @Override

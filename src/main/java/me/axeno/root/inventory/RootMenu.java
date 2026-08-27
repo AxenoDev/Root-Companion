@@ -13,7 +13,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class RootMenu extends AbstractContainerMenu {
-
     private static final int ROOT_SLOTS = RootInventory.TOTAL_SIZE;
 
     private final Container rootInventory;
@@ -28,33 +27,32 @@ public class RootMenu extends AbstractContainerMenu {
 
         rootInventory.startOpen(playerInv.player);
 
-        this.addSlot(new Slot(rootInventory, RootInventory.SLOT_MAIN_HAND, 8, 18) {
+        this.addSlot(new Slot(rootInventory, RootInventory.SLOT_MAIN_HAND, 16, 10) {
             @Override
             public int getMaxStackSize() {
                 return 1;
             }
         });
 
-        this.addSlot(createUpgradeSlot(RootInventory.SLOT_UPGRADE_1, 8, 36));
-        this.addSlot(createUpgradeSlot(RootInventory.SLOT_UPGRADE_2, 8, 54));
-        this.addSlot(createUpgradeSlot(RootInventory.SLOT_UPGRADE_3, 8, 72));
+        this.addSlot(createUpgradeSlot(RootInventory.SLOT_UPGRADE_1, 16, 28));
+        this.addSlot(createUpgradeSlot(RootInventory.SLOT_UPGRADE_2, 16, 46));
 
-        int startX = 81;
-        int startY = 19;
+        int startX = 95;
+        int startY = 10;
         for (int i = 0; i < RootInventory.INVENTORY_SIZE; i++) {
-            int col = i % 3;
-            int row = i / 3;
+            int col = i % 4;
+            int row = i / 4;
             this.addSlot(new Slot(rootInventory, RootInventory.SLOT_INVENTORY_START + i, startX + col * 18, startY + row * 18));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInv, 9 + col + row * 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(playerInv, 9 + col + row * 9, 8 + col * 18, 87 + row * 18));
             }
         }
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInv, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(playerInv, col, 8 + col * 18, 145));
         }
     }
 
