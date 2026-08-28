@@ -33,23 +33,19 @@ public class RootEntity extends TamableAnimal {
     public static final EntityDimensions SITTING_DIMENSIONS = EntityDimensions.scalable(0.75f, 1.18f);
     protected static final int SIT_DOWN_DURATION_TICKS = 19;
     protected static final int STANDUP_DURATION_TICKS = 19;
+    private static final int POPUP_MIN_COOLDOWN = 20 * 60 * 60;  // 1h
+    private static final int POPUP_MAX_COOLDOWN = 20 * 60 * 60 * 2; // 2h
+    private static final int POPUP_DURATION = 20 * 60 * 5; // 5minutes
+    private static final String NO_POPUP = "";
+    private static final EntityDataAccessor<String> DATA_POPUP_ID = SynchedEntityData.defineId(RootEntity.class, EntityDataSerializers.STRING);
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState sitDownAnimationState = new AnimationState();
     public final AnimationState sitIdleAnimationState = new AnimationState();
     public final AnimationState standUpAnimationState = new AnimationState();
-    private static final int POPUP_MIN_COOLDOWN = 20 * 60 * 60;  // 1h
-    private static final int POPUP_MAX_COOLDOWN = 20 * 60 * 60 * 2; // 2h
-    private static final int POPUP_DURATION = 20 * 60 * 5; // 5minutes
-
-    private int popupCooldown = randomCooldown();
-    private int popupDuration = 0;
-
-    private static final String NO_POPUP = "";
-
-    private static final EntityDataAccessor<String> DATA_POPUP_ID = SynchedEntityData.defineId(RootEntity.class, EntityDataSerializers.STRING);
-
     @Getter
     private final RootInventory inventory = new RootInventory(this);
+    private int popupCooldown = randomCooldown();
+    private int popupDuration = 0;
 
     public RootEntity(EntityType<? extends TamableAnimal> type, Level level) {
         super(type, level);
@@ -58,9 +54,9 @@ public class RootEntity extends TamableAnimal {
 
     public static AttributeSupplier.Builder createAttributes() {
         return TamableAnimal.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.FOLLOW_RANGE, 24.0D);
+                            .add(Attributes.MAX_HEALTH, 20.0D)
+                            .add(Attributes.MOVEMENT_SPEED, 0.3D)
+                            .add(Attributes.FOLLOW_RANGE, 24.0D);
     }
 
     @Override
@@ -190,10 +186,6 @@ public class RootEntity extends TamableAnimal {
         this.walkAnimation.update(f, 0.2F);
     }
 
-    private void setItemInHand(ItemStack stack) {
-        this.setItemInHand(InteractionHand.MAIN_HAND, stack);
-    }
-
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
@@ -219,7 +211,6 @@ public class RootEntity extends TamableAnimal {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.0D, 5.0F, 2.0F, false));
         this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
@@ -296,8 +287,8 @@ public class RootEntity extends TamableAnimal {
 
     public void openInventory(ServerPlayer player) {
         NetworkHooks.openScreen(player, new SimpleMenuProvider(
-                        (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this), this.getDisplayName()),
-                buf -> buf.writeInt(this.getId())
+                                        (id, playerInv, p) -> new RootMenu(id, playerInv, this.inventory, this), this.getDisplayName()),
+                                buf -> buf.writeInt(this.getId())
         );
     }
 
